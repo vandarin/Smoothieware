@@ -44,6 +44,8 @@
 #define pwm_frequency_checksum             CHECKSUM("pwm_frequency")
 #define bang_bang_checksum                 CHECKSUM("bang_bang")
 #define hysteresis_checksum                CHECKSUM("hysteresis")
+#define deadtime_checksum                  CHECKSUM("deadtime")
+#define deadtime_lag_checksum              CHECKSUM("deadtime_lag")
 #define heater_pin_checksum                CHECKSUM("heater_pin")
 #define max_temp_checksum                  CHECKSUM("max_temp")
 #define min_temp_checksum                  CHECKSUM("min_temp")
@@ -174,6 +176,8 @@ void TemperatureControl::load_config()
     if(!this->readonly) {
         // used to enable bang bang control of heater
         this->use_bangbang = THEKERNEL->config->value(temperature_control_checksum, this->name_checksum, bang_bang_checksum)->by_default(false)->as_bool();
+        this->use_deadtime = THEKERNEL->config->value(temperature_control_checksum, this->name_checksum, deadtime_checksum)->by_default(false)->as_bool();
+        this->deadtime_lag = THEKERNEL->config->value(temperature_control_checksum, this->name_checksum, deadtime_lag_checksum)->by_default(0)->as_number();
         this->hysteresis = THEKERNEL->config->value(temperature_control_checksum, this->name_checksum, hysteresis_checksum)->by_default(2)->as_number();
         this->windup = THEKERNEL->config->value(temperature_control_checksum, this->name_checksum, windup_checksum)->by_default(false)->as_bool();
         this->heater_pin.max_pwm( THEKERNEL->config->value(temperature_control_checksum, this->name_checksum, max_pwm_checksum)->by_default(255)->as_number() );
@@ -482,6 +486,18 @@ void TemperatureControl::pid_process(float temperature)
         }
         return;
     }
+    
+    if (use_deadtime)
+    {
+        float raising = this->PIDdt * (temperature - this->lastInput); // raising dT/dt
+        this->iTerm = 0.25 * (3.0 * this->iTerm + raising); // damp raising
+        this->o = (temperature + raising * deadtime_lag > target_temperature ? 0 : heater_pin.max_pwm());
+        this->heater_pin.pwm(this->o);
+        this->lastInput = temperature;
+        return;
+    }
+    
+
 
     // regular PID control
     float error = target_temperature - temperature;
@@ -503,6 +519,7 @@ void TemperatureControl::pid_process(float temperature)
         this->o = 0;
     else if(this->windup)
         this->iTerm = new_I; // Only update I term when output is not saturated.
+    
 
     this->heater_pin.pwm(this->o);
     this->lastInput = temperature;

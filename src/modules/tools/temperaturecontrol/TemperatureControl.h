@@ -80,8 +80,14 @@ class TemperatureControl : public Module {
         float d_factor;
         float PIDdt;
 
+        //deadtime tracker
+        float old_temps[4];
+        float deadtime_lag;
+        uint8_t tempPointer;
+        
         struct {
             bool use_bangbang:1;
+            bool use_deadtime:1;
             bool waiting:1;
             bool temp_violated:1;
             bool link_to_tool:1;

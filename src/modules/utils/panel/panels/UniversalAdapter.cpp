@@ -135,7 +135,13 @@ void UniversalAdapter::buzz(long duration, uint16_t freq)
 {
     SPIFrame sf(this); // asserts cs on entry and deasserts on exit
     wait_until_ready();
-    writeSPI(BUZZ);
+    uint8_t cmd = BUZZ | 3;
+    writeSPI(cmd);
+
+    writeSPI(duration & 0xFF);
+
+    writeSPI((freq >> 8) & 0xFF);
+    writeSPI(freq & 0xFF);
 }
 
 void UniversalAdapter::write(const char *line, int len)

@@ -12,6 +12,8 @@
 #include "Pin.h"
 #include "mbed.h"
 #include <string>
+#include "Module.h"
+
 using std::string;
 
 #define MENU_MODE                  0
@@ -32,6 +34,7 @@ class Panel : public Module {
         static Panel* instance;
 
         void on_module_loaded();
+        void on_gcode_received(void* argument);
         uint32_t button_tick(uint32_t dummy);
         uint32_t encoder_tick(uint32_t dummy);
         void on_idle(void* argument);

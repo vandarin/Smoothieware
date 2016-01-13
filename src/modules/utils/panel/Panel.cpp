@@ -191,6 +191,8 @@ void Panel::on_module_loaded()
 
     // Refresh timer
     THEKERNEL->slow_ticker->attach( 20, this, &Panel::refresh_tick );
+
+    this->register_for_event(ON_GCODE_RECEIVED);
 }
 
 // Enter a screen, we only care about it now
@@ -659,5 +661,25 @@ void Panel::on_second_tick(void *arg)
         }
     }else{
         // TODO for panels with no sd card detect we need to poll to see if card is inserted - or not
+    }
+}
+
+void Panel::on_gcode_received(void* argument){
+    Gcode* gcode = static_cast<Gcode*>(argument);
+    if( gcode->has_m ){
+        if( gcode->m == 300 ){
+            long duration = 50;
+            uint16_t frequency = 260; // middle C?
+            if ( gcode->has_letter('P') )
+            {
+                duration = gcode->get_uint('P');
+            }
+            if ( gcode->has_letter('S') )
+            {
+                frequency = gcode->get_uint('S');
+            }
+            this->lcd->buzz(duration, frequency);
+            // buzz(long duration, uint16_t freq)
+        }
     }
 }
